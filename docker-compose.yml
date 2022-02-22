@@ -1,0 +1,12 @@
+version: "3.3"
+services:
+  gen_electricity_bot:
+    build: .
+    restart: unless-stopped
+    image: gen_electricity_bot
+    container_name: gen_electricity_bot_co
+    command: yarn run go
+    volumes:
+      - ./users.txt:/usr/app/users.txt
+      - ./html:/usr/app/html
+      - ./.env:/usr/app/.env

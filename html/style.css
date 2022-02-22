@@ -1,0 +1,94 @@
+body {
+  padding: 0px;
+  margin: 0px;
+  height: 1280px;
+  width: 1280px;
+  background: gray;
+  font-family: "Roboto", sans-serif;
+  font-size: 25px;
+}
+
+p {
+  margin: 0;
+}
+
+.hide {
+  display: none !important;
+}
+
+.info-line {
+  color: gray;
+  display: block;
+  font-size: 25px;
+  line-height: 40px;
+}
+
+table {
+  border-collapse: collapse;
+  text-align: center;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+  align-content: stretch;
+  align-items: stretch;
+  padding: 20px;
+  height: 100%;
+  width: 100%;
+  background: #f6fbff;
+  box-sizing: border-box;
+}
+
+.center {
+  text-align: center;
+}
+
+.table-primary td {
+  border-color: #7abaff;
+}
+.table-primary > td {
+  background-color: #b8daff;
+}
+
+.table-bordered td,
+.table-bordered th {
+  border: 1px solid #95a1ac;
+}
+
+.table-bordered td {
+  padding: 14px 7px 14px 7px;
+  font-size: 18px;
+}
+
+.month.table-bordered td {
+  padding: 7px 7px 7px 7px;
+  font-size: 17px;
+}
+
+.table .thead-dark th {
+  color: #fff;
+  background-color: #343a40;
+  border-color: #6c737a;
+  font-size: 16px;
+  font-weight: 400;
+  padding: 5px 10px;
+}
+
+.table-secondary td {
+  border-color: #b3b7bb;
+}
+
+.table-secondary > td {
+  background-color: #d6d8db;
+}
+
+.table-info td {
+  border-color: #86cfda;
+}
+
+.table-info > td {
+  background-color: #bee5eb;
+}
