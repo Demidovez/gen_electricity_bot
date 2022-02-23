@@ -1,6 +1,9 @@
 import { Markup } from "telegraf";
-import { getUsersIds } from "./utils.js";
-import { generateYearImage, generateMonthImage } from "./generate_images.js";
+import {
+  generateYearImage,
+  generateMonthImage,
+  generateYearsImage,
+} from "./generate_images.js";
 
 export const sendRequestUser = (bot, from) => {
   try {
@@ -71,16 +74,19 @@ export const sendDataNotify = (bot, user_id) => {
   }
 };
 
-export const sendDataYearNotify = (bot, ctx) => {
+export const sendDataYearNotify = (bot, ctx, buttons) => {
   try {
     const { id, username, first_name, last_name } = ctx.message.chat;
 
     ctx.replyWithChatAction("upload_photo");
 
     generateYearImage().then(() => {
-      ctx.replyWithPhoto({
-        source: "year.png",
-      });
+      ctx.replyWithPhoto(
+        {
+          source: "year.png",
+        },
+        Markup.keyboard(buttons).resize()
+      );
     });
 
     if (id != process.env.SUPER_ADMIN_ID) {
@@ -94,16 +100,45 @@ export const sendDataYearNotify = (bot, ctx) => {
   }
 };
 
-export const sendDataMonthNotify = (bot, ctx, offsetMonth) => {
+export const sendDataAllYearsNotify = (bot, ctx, buttons) => {
+  try {
+    const { id, username, first_name, last_name } = ctx.message.chat;
+
+    ctx.replyWithChatAction("upload_photo");
+
+    generateYearsImage().then(() => {
+      ctx.replyWithPhoto(
+        {
+          source: "years.png",
+        },
+        Markup.keyboard(buttons).resize()
+      );
+    });
+
+    if (id != process.env.SUPER_ADMIN_ID) {
+      bot.telegram.sendMessage(
+        process.env.SUPER_ADMIN_ID,
+        `Запрос данных от: ${first_name + " " + last_name}, @${username}, ${id}`
+      );
+    }
+  } catch (err) {
+    console.log(err);
+  }
+};
+
+export const sendDataMonthNotify = (bot, ctx, offsetMonth, buttons) => {
   try {
     const { id, username, first_name, last_name } = ctx.message.chat;
 
     ctx.replyWithChatAction("upload_photo");
 
     generateMonthImage(offsetMonth).then(() => {
-      ctx.replyWithPhoto({
-        source: "month.png",
-      });
+      ctx.replyWithPhoto(
+        {
+          source: "month.png",
+        },
+        Markup.keyboard(buttons).resize()
+      );
     });
 
     if (id != process.env.SUPER_ADMIN_ID) {

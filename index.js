@@ -5,6 +5,7 @@ import {
   sendRequestUser,
   sendMessageToAdmin,
   sendDataYearNotify,
+  sendDataAllYearsNotify,
   sendDataMonthNotify,
 } from "./utils/notify.js";
 import { getUsersIds } from "./utils/utils.js";
@@ -12,7 +13,10 @@ import fs from "fs";
 
 dotenv.config();
 
-const buttons = [["Год"], ["-2 мес.", "-1 мес.", "0 мес."]];
+const buttons = [
+  ["Прошлые года", "Год"],
+  ["-2 мес.", "-1 мес.", "0 мес."],
+];
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
@@ -76,13 +80,17 @@ bot.action(/addUser \|(.+)\| \|(.+)\| \|(.+)\|/, (ctx) => {
 });
 
 bot.hears("Год", (ctx) => {
-  sendDataYearNotify(bot, ctx);
+  sendDataYearNotify(bot, ctx, buttons);
+});
+
+bot.hears("Прошлые года", (ctx) => {
+  sendDataAllYearsNotify(bot, ctx, buttons);
 });
 
 bot.hears(/(.+) мес./i, (ctx) => {
   const offsetMonth = parseInt(ctx.match[1]);
   if (!isNaN(offsetMonth) && offsetMonth <= 0 && offsetMonth >= -2) {
-    sendDataMonthNotify(bot, ctx, Math.abs(offsetMonth));
+    sendDataMonthNotify(bot, ctx, Math.abs(offsetMonth), buttons);
   } else {
     ctx.reply("Ошибка!");
   }

@@ -434,6 +434,57 @@ export const generateYearHTML = async () => {
   );
 };
 
+export const generateYearsHTML = async () => {
+  let contentHtml = fs.readFileSync(
+    new URL("../html/template_years.html", import.meta.url),
+    "utf8"
+  );
+
+  const root = parse(contentHtml);
+
+  let lines = [];
+
+  try {
+    await sql.connect(strConnectionToSQL);
+    const resultYear =
+      await sql.query`select * from ProductionConsumptionsYears`;
+
+    resultYear.recordset.map((year) => {
+      lines.push(`
+      <tr class="table-primary">
+        <td>${year.Year}</td>
+        <td>${year.ProductionPulp.toFixed(2).replace(".00", "") || ""}</td>
+        <td>${year.TotalConsumption.toFixed(2).replace(".00", "") || ""}</td>
+        <td>${year.BPPConsumption.toFixed(2).replace(".00", "") || ""}</td>
+        <td>${
+          year.ProductionElectricity.toFixed(2).replace(".00", "") || ""
+        }</td>
+        <td>${year.Procentage.toFixed(2).replace(".00", "") || ""}</td>
+        <td>${year.Sales.toFixed(2).replace(".00", "") || ""}</td>
+        <td>${year.GomelConsumptionkWh.toFixed(2).replace(".00", "") || ""}</td>
+        <td></td>
+        <td></td>
+        <td>${
+          year.GomelConsumptionGkal.toFixed(2).replace(".00", "") || ""
+        }</td>
+      </tr>`);
+    });
+  } catch (err) {
+    console.log(err);
+  }
+
+  lines.map((line) => {
+    root
+      .querySelector("tbody")
+      .appendChild(parse(line, { parseNoneClosedTags: true }));
+  });
+
+  fs.writeFileSync(
+    new URL("../html/index_years.html", import.meta.url),
+    root.innerHTML
+  );
+};
+
 export const generateMonthHTML = async (offsetMonth) => {
   let contentHtml = fs.readFileSync(
     new URL("../html/template_month.html", import.meta.url),
