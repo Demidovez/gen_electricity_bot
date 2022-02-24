@@ -551,7 +551,7 @@ export const generateMonthHTML = async (offsetMonth) => {
     resultDays.recordset.map((day, index) => {
       lines.push(`
         <tr class="table-secondary">
-            <td>с 1 по ${day.Date.getDate()} | ${index + 1}</td>
+            <td>с 1 по ${day.Date.getDate()}</td>
             <td>${day.ProductionPulp.toFixed(2).replace(".00", "") || ""}</td>
             <td>${day.TotalConsumption.toFixed(2).replace(".00", "") || ""}</td>
             <td>${day.BPPConsumption.toFixed(2).replace(".00", "") || ""}</td>
