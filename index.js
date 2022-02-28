@@ -31,7 +31,7 @@ bot.use(async (ctx, next) => {
   if (getUsersIds().includes("" + ctx.chat.id)) {
     await next();
   } else {
-    sendRequestUser(bot, ctx.chat);
+    sendRequestUser(bot, ctx.from);
   }
 });
 
