@@ -1,10 +1,9 @@
 import { parse } from "node-html-parser";
 import fs from "fs";
-import mysql from "mysql2";
+import QUERIES from "./queries.js";
 import sql from "mssql";
 
-const strConnectionToSQL =
-  "Server=10.1.15.241,1433;Database=ElectricitySCKK;User Id=bot_telegram;Password=bp#1m8dm;Encrypt=false";
+const strConnectionToSQL = process.env.SQL_STRING;
 
 const monthNames = [
   "Январь",
@@ -32,389 +31,264 @@ export const generateYearHTML = async () => {
   let lines = [];
 
   try {
-    await sql.connect(strConnectionToSQL);
-    const resultYear =
-      await sql.query`select * from ProductionConsumptionsYears`;
-    const lastYear = resultYear.recordset[resultYear.recordset.length - 1];
+    await sql.connect(process.env.SQL_STRING);
+
+    const result = await sql.query(QUERIES.getYears());
+
+    const lastYear = result.recordset[result.recordset.length - 1];
+
     lines.push(`
         <tr class="table-primary">
-          <td>${lastYear.Year}</td>
+          <td>${lastYear.year}</td>
+          <td>${lastYear.production.toFixed(2).replace(".00", "") || ""}</td>
           <td>${
-            lastYear.ProductionPulp.toFixed(2).replace(".00", "") || ""
+            lastYear.total_consumed.toFixed(2).replace(".00", "") || ""
           }</td>
+          <td>${lastYear.ZBC_consumed.toFixed(2).replace(".00", "") || ""}</td>
           <td>${
-            lastYear.TotalConsumption.toFixed(2).replace(".00", "") || ""
+            ((lastYear.generation / lastYear.total_consumed) * 100)
+              .toFixed(2)
+              .replace(".00", "") || ""
           }</td>
-          <td>${
-            lastYear.BPPConsumption.toFixed(2).replace(".00", "") || ""
-          }</td>
-          <td>${
-            lastYear.ProductionElectricity.toFixed(2).replace(".00", "") || ""
-          }</td>
-          <td>${lastYear.Procentage.toFixed(2).replace(".00", "") || ""}</td>
-          <td>${lastYear.Sales.toFixed(2).replace(".00", "") || ""}</td>
-          <td>${
-            lastYear.GomelConsumptionkWh.toFixed(2).replace(".00", "") || ""
-          }</td>
+          <td>${lastYear.procentage.toFixed(2).replace(".00", "") || ""}</td>
+          <td>${lastYear.sold.toFixed(2).replace(".00", "") || ""}</td>
+          <td>${lastYear.RUP_consumed.toFixed(2).replace(".00", "") || ""}</td>
           <td></td>
           <td></td>
-          <td>${
-            lastYear.GomelConsumptionGkal.toFixed(2).replace(".00", "") || ""
-          }</td>
+          <td>${lastYear.gkal.toFixed(2).replace(".00", "") || ""}</td>
         </tr>`);
 
-    const resultMonths =
-      await sql.query`select * from ProductionConsumptionsMonths where Year=${lastYear.Year}`;
+    const resultMonths = await sql.query(QUERIES.getMonths(lastYear.year));
+
+    const resultPluses = await sql.query(
+      QUERIES.getPlusesByYear(lastYear.year)
+    );
 
     let kvartal1 = {
       name: "1 квартал",
-      ProductionPulp: 0,
-      TotalConsumption: 0,
-      BPPConsumption: 0,
-      ProductionElectricity: 0,
-      Procentage: 0,
-      Sales: 0,
-      GomelConsumptionkWh: 0,
-      GomelConsumptionGkal: 0,
+      production: 0,
+      total_consumed: 0,
+      ZBC_consumed: 0,
+      generation: 0,
+      procentage: 0,
+      sold: 0,
+      RUP_consumed: 0,
+      gkal: 0,
     };
 
     let kvartal2 = {
       name: "2 квартал",
-      ProductionPulp: 0,
-      TotalConsumption: 0,
-      BPPConsumption: 0,
-      ProductionElectricity: 0,
-      Procentage: 0,
-      Sales: 0,
-      GomelConsumptionkWh: 0,
-      GomelConsumptionGkal: 0,
+      production: 0,
+      total_consumed: 0,
+      ZBC_consumed: 0,
+      generation: 0,
+      procentage: 0,
+      sold: 0,
+      RUP_consumed: 0,
+      gkal: 0,
     };
 
     let kvartal3 = {
       name: "3 квартал",
-      ProductionPulp: 0,
-      TotalConsumption: 0,
-      BPPConsumption: 0,
-      ProductionElectricity: 0,
-      Procentage: 0,
-      Sales: 0,
-      GomelConsumptionkWh: 0,
-      GomelConsumptionGkal: 0,
+      production: 0,
+      total_consumed: 0,
+      ZBC_consumed: 0,
+      generation: 0,
+      procentage: 0,
+      sold: 0,
+      RUP_consumed: 0,
+      gkal: 0,
     };
 
     let kvartal4 = {
       name: "4 квартал",
-      ProductionPulp: 0,
-      TotalConsumption: 0,
-      BPPConsumption: 0,
-      ProductionElectricity: 0,
-      Procentage: 0,
-      Sales: 0,
-      GomelConsumptionkWh: 0,
-      GomelConsumptionGkal: 0,
+      production: 0,
+      total_consumed: 0,
+      ZBC_consumed: 0,
+      generation: 0,
+      procentage: 0,
+      sold: 0,
+      RUP_consumed: 0,
+      gkal: 0,
     };
 
-    resultMonths.recordset.map((month) => {
+    resultMonths.recordset.map((month, index) => {
+      const days = resultPluses.recordset.filter(
+        (day) => day.month_id === month.month_id
+      );
+
       lines.push(`
         <tr class="table-secondary">
-            <td>${monthNames[month.MonthId - 1]}</td>
-            <td>${month.ProductionPulp.toFixed(2).replace(".00", "") || ""}</td>
+            <td>${monthNames[month.month_id - 1]}</td>
+            <td>${month.production.toFixed(2).replace(".00", "") || ""}</td>
+            <td>${month.total_consumed.toFixed(2).replace(".00", "") || ""}</td>
+            <td>${month.ZBC_consumed.toFixed(2).replace(".00", "") || ""}</td>
+            <td>${month.generation.toFixed(2).replace(".00", "") || ""}</td>
+            <td>${month.procentage.toFixed(2).replace(".00", "") || ""}</td>
+            <td>${month.sold.toFixed(2).replace(".00", "") || ""}</td>
+            <td>${month.RUP_consumed.toFixed(2).replace(".00", "") || ""}</td>
+            <td>${month.power.toFixed(1).replace(".0", "") || ""}</td> 
             <td>${
-              month.TotalConsumption.toFixed(2).replace(".00", "") || ""
+              days.reduce((a, b) => a + +b.plus, 0) >= days.length / 2
+                ? "+"
+                : ""
             }</td>
-            <td>${month.BPPConsumption.toFixed(2).replace(".00", "") || ""}</td>
-            <td>${
-              month.ProductionElectricity.toFixed(2).replace(".00", "") || ""
-            }</td>
-            <td>${month.Procentage.toFixed(2).replace(".00", "") || ""}</td>
-            <td>${month.Sales.toFixed(2).replace(".00", "") || ""}</td>
-            <td>${
-              month.GomelConsumptionkWh.toFixed(2).replace(".00", "") || ""
-            }</td>
-            <td>${
-              month.GomelConsumptionMW.toFixed(2).replace(".00", "") || ""
-            }</td>
-            <td>${month.MWstatus || ""}</td>
-            <td>${
-              month.GomelConsumptionGkal.toFixed(2).replace(".00", "") || ""
-            }</td>
+            <td>${month.gkal.toFixed(2).replace(".00", "") || ""}</td>
         </tr>`);
 
-      if (month.MonthId >= 1 && month.MonthId <= 3) {
+      if (month.month_id >= 1 && month.month_id <= 3) {
         kvartal1 = {
           ...kvartal1,
-          ProductionPulp: kvartal1.ProductionPulp + month.ProductionPulp,
-          TotalConsumption: kvartal1.TotalConsumption + month.TotalConsumption,
-          BPPConsumption: kvartal1.BPPConsumption + month.BPPConsumption,
-          ProductionElectricity:
-            kvartal1.ProductionElectricity + month.ProductionElectricity,
-          Procentage:
-            ((kvartal1.ProductionElectricity + month.ProductionElectricity) *
-              100) /
-            (kvartal1.TotalConsumption + month.TotalConsumption),
-          Sales: kvartal1.Sales + month.Sales,
-          GomelConsumptionkWh:
-            kvartal1.GomelConsumptionkWh + month.GomelConsumptionkWh,
-          GomelConsumptionGkal:
-            kvartal1.GomelConsumptionGkal + month.GomelConsumptionGkal,
+          production: kvartal1.production + month.production,
+          total_consumed: kvartal1.total_consumed + month.total_consumed,
+          ZBC_consumed: kvartal1.ZBC_consumed + month.ZBC_consumed,
+          generation: kvartal1.generation + month.generation,
+          procentage:
+            ((kvartal1.procentage + month.procentage) * 100) /
+            (kvartal1.total_consumed + month.total_consumed),
+          sold: kvartal1.sold + month.sold,
+          RUP_consumed: kvartal1.RUP_consumed + month.RUP_consumed,
+          gkal: kvartal1.gkal + month.gkal,
         };
 
-        if (month.MonthId == 3) {
+        if (month.month_id == 3) {
           lines.push(`
-                    <tr class="table-info">
-                    <td>${kvartal1.name}</td>
-                    <td>${
-                      kvartal1.ProductionPulp.toFixed(2).replace(".00", "") ||
-                      ""
-                    }</td>
-                    <td>${
-                      kvartal1.TotalConsumption.toFixed(2).replace(".00", "") ||
-                      ""
-                    }</td>
-                    <td>${
-                      kvartal1.BPPConsumption.toFixed(2).replace(".00", "") ||
-                      ""
-                    }</td>
-                    <td>${
-                      kvartal1.ProductionElectricity.toFixed(2).replace(
-                        ".00",
-                        ""
-                      ) || ""
-                    }</td>
-                    <td>${
-                      kvartal1.Procentage.toFixed(2).replace(".00", "") || ""
-                    }</td>
-                    <td>${
-                      kvartal1.Sales.toFixed(2).replace(".00", "") || ""
-                    }</td>
-                    <td>${
-                      kvartal1.GomelConsumptionkWh.toFixed(2).replace(
-                        ".00",
-                        ""
-                      ) || ""
-                    }</td>
-                    <td></td>
-                    <td></td>
-                    <td>${
-                      kvartal1.GomelConsumptionGkal.toFixed(2).replace(
-                        ".00",
-                        ""
-                      ) || ""
-                    }</td>
-                    </tr>`);
+            <tr class="table-info">
+            <td>${kvartal1.name}</td>
+            <td>${kvartal1.production.toFixed(2).replace(".00", "") || ""}</td>
+            <td>${
+              kvartal1.total_consumed.toFixed(2).replace(".00", "") || ""
+            }</td>
+            <td>${
+              kvartal1.ZBC_consumed.toFixed(2).replace(".00", "") || ""
+            }</td>
+            <td>${kvartal1.generation.toFixed(2).replace(".00", "") || ""}</td>
+            <td>${kvartal1.procentage.toFixed(2).replace(".00", "") || ""}</td>
+            <td>${kvartal1.sold.toFixed(2).replace(".00", "") || ""}</td>
+            <td>${
+              kvartal1.RUP_consumed.toFixed(2).replace(".00", "") || ""
+            }</td>
+            <td></td>
+            <td></td>
+            <td>${kvartal1.gkal.toFixed(2).replace(".00", "") || ""}</td>
+            </tr>`);
         }
       }
 
-      if (month.MonthId >= 4 && month.MonthId <= 6) {
+      if (month.month_id >= 4 && month.month_id <= 6) {
         kvartal2 = {
           ...kvartal2,
-          ProductionPulp: kvartal2.ProductionPulp + month.ProductionPulp,
-          TotalConsumption: kvartal2.TotalConsumption + month.TotalConsumption,
-          BPPConsumption: kvartal2.BPPConsumption + month.BPPConsumption,
-          ProductionElectricity:
-            kvartal2.ProductionElectricity + month.ProductionElectricity,
-          Procentage:
-            ((kvartal2.ProductionElectricity + month.ProductionElectricity) *
-              100) /
-            (kvartal2.TotalConsumption + month.TotalConsumption),
-          Sales: kvartal2.Sales + month.Sales,
-          GomelConsumptionkWh:
-            kvartal2.GomelConsumptionkWh + month.GomelConsumptionkWh,
-          GomelConsumptionGkal:
-            kvartal2.GomelConsumptionGkal + month.GomelConsumptionGkal,
+          production: kvartal2.production + month.production,
+          total_consumed: kvartal2.total_consumed + month.total_consumed,
+          ZBC_consumed: kvartal2.ZBC_consumed + month.ZBC_consumed,
+          generation: kvartal2.generation + month.generation,
+          procentage:
+            ((kvartal2.generation + month.generation) * 100) /
+            (kvartal2.total_consumed + month.total_consumed),
+          sold: kvartal2.sold + month.sold,
+          RUP_consumed: kvartal2.RUP_consumed + month.RUP_consumed,
+          gkal: kvartal2.gkal + month.gkal,
         };
 
-        if (month.MonthId == 6) {
+        if (month.month_id == 6) {
           lines.push(`
-                            <tr class="table-info">
-                            <td>${kvartal2.name}</td>
-                            <td>${
-                              kvartal2.ProductionPulp.toFixed(2).replace(
-                                ".00",
-                                ""
-                              ) || ""
-                            }</td>
-                            <td>${
-                              kvartal2.TotalConsumption.toFixed(2).replace(
-                                ".00",
-                                ""
-                              ) || ""
-                            }</td>
-                            <td>${
-                              kvartal2.BPPConsumption.toFixed(2).replace(
-                                ".00",
-                                ""
-                              ) || ""
-                            }</td>
-                            <td>${
-                              kvartal2.ProductionElectricity.toFixed(2).replace(
-                                ".00",
-                                ""
-                              ) || ""
-                            }</td>
-                            <td>${
-                              kvartal2.Procentage.toFixed(2).replace(
-                                ".00",
-                                ""
-                              ) || ""
-                            }</td>
-                            <td>${
-                              kvartal2.Sales.toFixed(2).replace(".00", "") || ""
-                            }</td>
-                            <td>${
-                              kvartal2.GomelConsumptionkWh.toFixed(2).replace(
-                                ".00",
-                                ""
-                              ) || ""
-                            }</td>
-                            <td></td>
-                            <td></td>
-                            <td>${
-                              kvartal2.GomelConsumptionGkal.toFixed(2).replace(
-                                ".00",
-                                ""
-                              ) || ""
-                            }</td>
-                            </tr>`);
+            <tr class="table-info">
+            <td>${kvartal2.name}</td>
+            <td>${kvartal2.production.toFixed(2).replace(".00", "") || ""}</td>
+            <td>${
+              kvartal2.total_consumed.toFixed(2).replace(".00", "") || ""
+            }</td>
+            <td>${
+              kvartal2.ZBC_consumed.toFixed(2).replace(".00", "") || ""
+            }</td>
+            <td>${kvartal2.generation.toFixed(2).replace(".00", "") || ""}</td>
+            <td>${kvartal2.procentage.toFixed(2).replace(".00", "") || ""}</td>
+            <td>${kvartal2.sold.toFixed(2).replace(".00", "") || ""}</td>
+            <td>${
+              kvartal2.RUP_consumed.toFixed(2).replace(".00", "") || ""
+            }</td>
+            <td></td>
+            <td></td>
+            <td>${kvartal2.gkal.toFixed(2).replace(".00", "") || ""}</td>
+            </tr>`);
         }
       }
 
-      if (month.MonthId >= 7 && month.MonthId <= 9) {
+      if (month.month_id >= 7 && month.month_id <= 9) {
         kvartal3 = {
           ...kvartal3,
-          ProductionPulp: kvartal3.ProductionPulp + month.ProductionPulp,
-          TotalConsumption: kvartal3.TotalConsumption + month.TotalConsumption,
-          BPPConsumption: kvartal3.BPPConsumption + month.BPPConsumption,
-          ProductionElectricity:
-            kvartal3.ProductionElectricity + month.ProductionElectricity,
-          Procentage:
-            ((kvartal3.ProductionElectricity + month.ProductionElectricity) *
-              100) /
-            (kvartal3.TotalConsumption + month.TotalConsumption),
-          Sales: kvartal3.Sales + month.Sales,
-          GomelConsumptionkWh:
-            kvartal3.GomelConsumptionkWh + month.GomelConsumptionkWh,
-          GomelConsumptionGkal:
-            kvartal3.GomelConsumptionGkal + month.GomelConsumptionGkal,
+          production: kvartal3.production + month.production,
+          total_consumed: kvartal3.total_consumed + month.total_consumed,
+          ZBC_consumed: kvartal3.ZBC_consumed + month.ZBC_consumed,
+          generation: kvartal3.generation + month.generation,
+          procentage:
+            ((kvartal3.generation + month.generation) * 100) /
+            (kvartal3.total_consumed + month.total_consumed),
+          sold: kvartal3.sold + month.sold,
+          RUP_consumed: kvartal3.RUP_consumed + month.RUP_consumed,
+          gkal: kvartal3.gkal + month.gkal,
         };
 
-        if (month.MonthId == 9) {
+        if (month.month_id == 9) {
           lines.push(`
-                                        <tr class="table-info">
-                                        <td>${kvartal3.name}</td>
-                                        <td>${
-                                          kvartal3.ProductionPulp.toFixed(
-                                            2
-                                          ).replace(".00", "") || ""
-                                        }</td>
-                                        <td>${
-                                          kvartal3.TotalConsumption.toFixed(
-                                            2
-                                          ).replace(".00", "") || ""
-                                        }</td>
-                                        <td>${
-                                          kvartal3.BPPConsumption.toFixed(
-                                            2
-                                          ).replace(".00", "") || ""
-                                        }</td>
-                                        <td>${
-                                          kvartal3.ProductionElectricity.toFixed(
-                                            2
-                                          ).replace(".00", "") || ""
-                                        }</td>
-                                        <td>${
-                                          kvartal3.Procentage.toFixed(
-                                            2
-                                          ).replace(".00", "") || ""
-                                        }</td>
-                                        <td>${
-                                          kvartal3.Sales.toFixed(2).replace(
-                                            ".00",
-                                            ""
-                                          ) || ""
-                                        }</td>
-                                        <td>${
-                                          kvartal3.GomelConsumptionkWh.toFixed(
-                                            2
-                                          ).replace(".00", "") || ""
-                                        }</td>
-                                        <td></td>
-                                        <td></td>
-                                        <td>${
-                                          kvartal3.GomelConsumptionGkal.toFixed(
-                                            2
-                                          ).replace(".00", "") || ""
-                                        }</td>
-                                        </tr>`);
+            <tr class="table-info">
+            <td>${kvartal3.name}</td>
+            <td>${kvartal3.production.toFixed(2).replace(".00", "") || ""}</td>
+            <td>${
+              kvartal3.total_consumed.toFixed(2).replace(".00", "") || ""
+            }</td>
+            <td>${
+              kvartal3.ZBC_consumed.toFixed(2).replace(".00", "") || ""
+            }</td>
+            <td>${kvartal3.generation.toFixed(2).replace(".00", "") || ""}</td>
+            <td>${kvartal3.procentage.toFixed(2).replace(".00", "") || ""}</td>
+            <td>${kvartal3.sold.toFixed(2).replace(".00", "") || ""}</td>
+            <td>${
+              kvartal3.RUP_consumed.toFixed(2).replace(".00", "") || ""
+            }</td>
+            <td></td>
+            <td></td>
+            <td>${kvartal3.gkal.toFixed(2).replace(".00", "") || ""}</td>
+            </tr>`);
         }
       }
 
-      if (month.MonthId >= 10 && month.MonthId <= 12) {
+      if (month.month_id >= 10 && month.month_id <= 12) {
         kvartal4 = {
           ...kvartal4,
-          ProductionPulp: kvartal4.ProductionPulp + month.ProductionPulp,
-          TotalConsumption: kvartal4.TotalConsumption + month.TotalConsumption,
-          BPPConsumption: kvartal4.BPPConsumption + month.BPPConsumption,
-          ProductionElectricity:
-            kvartal4.ProductionElectricity + month.ProductionElectricity,
-          Procentage:
-            ((kvartal4.ProductionElectricity + month.ProductionElectricity) *
-              100) /
-            (kvartal4.TotalConsumption + month.TotalConsumption),
-          Sales: kvartal4.Sales + month.Sales,
-          GomelConsumptionkWh:
-            kvartal4.GomelConsumptionkWh + month.GomelConsumptionkWh,
-          GomelConsumptionGkal:
-            kvartal4.GomelConsumptionGkal + month.GomelConsumptionGkal,
+          production: kvartal4.production + month.production,
+          total_consumed: kvartal4.total_consumed + month.total_consumed,
+          ZBC_consumed: kvartal4.ZBC_consumed + month.ZBC_consumed,
+          generation: kvartal4.generation + month.generation,
+          procentage:
+            ((kvartal4.generation + month.generation) * 100) /
+            (kvartal4.total_consumed + month.total_consumed),
+          sold: kvartal4.sold + month.sold,
+          RUP_consumed: kvartal4.RUP_consumed + month.RUP_consumed,
+          gkal: kvartal4.gkal + month.gkal,
         };
 
-        if (month.MonthId == 12) {
+        if (month.month_id == 12) {
           lines.push(`
-                                                    <tr class="table-info">
-                                                    <td>${kvartal4.name}</td>
-                                                    <td>${
-                                                      kvartal4.ProductionPulp.toFixed(
-                                                        2
-                                                      ).replace(".00", "") || ""
-                                                    }</td>
-                                                    <td>${
-                                                      kvartal4.TotalConsumption.toFixed(
-                                                        2
-                                                      ).replace(".00", "") || ""
-                                                    }</td>
-                                                    <td>${
-                                                      kvartal4.BPPConsumption.toFixed(
-                                                        2
-                                                      ).replace(".00", "") || ""
-                                                    }</td>
-                                                    <td>${
-                                                      kvartal4.ProductionElectricity.toFixed(
-                                                        2
-                                                      ).replace(".00", "") || ""
-                                                    }</td>
-                                                    <td>${
-                                                      kvartal4.Procentage.toFixed(
-                                                        2
-                                                      ).replace(".00", "") || ""
-                                                    }</td>
-                                                    <td>${
-                                                      kvartal4.Sales.toFixed(
-                                                        2
-                                                      ).replace(".00", "") || ""
-                                                    }</td>
-                                                    <td>${
-                                                      kvartal4.GomelConsumptionkWh.toFixed(
-                                                        2
-                                                      ).replace(".00", "") || ""
-                                                    }</td>
-                                                    <td></td>
-                                                    <td></td>
-                                                    <td>${
-                                                      kvartal4.GomelConsumptionGkal.toFixed(
-                                                        2
-                                                      ).replace(".00", "") || ""
-                                                    }</td>
-                                                    </tr>`);
+            <tr class="table-info">
+            <td>${kvartal4.name}</td>
+            <td>${kvartal4.production.toFixed(2).replace(".00", "") || ""}</td>
+            <td>${
+              kvartal4.total_consumed.toFixed(2).replace(".00", "") || ""
+            }</td>
+            <td>${
+              kvartal4.ZBC_consumed.toFixed(2).replace(".00", "") || ""
+            }</td>
+            <td>${kvartal4.generation.toFixed(2).replace(".00", "") || ""}</td>
+            <td>${kvartal4.procentage.toFixed(2).replace(".00", "") || ""}</td>
+            <td>${kvartal4.sold.toFixed(2).replace(".00", "") || ""}</td>
+            <td>${
+              kvartal4.RUP_consumed.toFixed(2).replace(".00", "") || ""
+            }</td>
+            <td></td>
+            <td></td>
+            <td>${kvartal4.gkal.toFixed(2).replace(".00", "") || ""}</td>
+            </tr>`);
         }
       }
     });
@@ -445,28 +319,28 @@ export const generateYearsHTML = async () => {
   let lines = [];
 
   try {
-    await sql.connect(strConnectionToSQL);
-    const resultYear =
-      await sql.query`select * from ProductionConsumptionsYears`;
+    await sql.connect(process.env.SQL_STRING);
 
-    resultYear.recordset.map((year) => {
+    const result = await sql.query(QUERIES.getYears());
+
+    result.recordset.map((year) => {
       lines.push(`
       <tr class="table-primary">
-        <td>${year.Year}</td>
-        <td>${year.ProductionPulp.toFixed(2).replace(".00", "") || ""}</td>
-        <td>${year.TotalConsumption.toFixed(2).replace(".00", "") || ""}</td>
-        <td>${year.BPPConsumption.toFixed(2).replace(".00", "") || ""}</td>
+        <td>${year.year}</td>
+        <td>${year.production.toFixed(2).replace(".00", "") || ""}</td>
+        <td>${year.total_consumed.toFixed(2).replace(".00", "") || ""}</td>
+        <td>${year.ZBC_consumed.toFixed(2).replace(".00", "") || ""}</td>
+        <td>${year.generation.toFixed(2).replace(".00", "") || ""}</td>
         <td>${
-          year.ProductionElectricity.toFixed(2).replace(".00", "") || ""
+          ((year.generation / year.total_consumed) * 100)
+            .toFixed(2)
+            .replace(".00", "") || ""
         }</td>
-        <td>${year.Procentage.toFixed(2).replace(".00", "") || ""}</td>
-        <td>${year.Sales.toFixed(2).replace(".00", "") || ""}</td>
-        <td>${year.GomelConsumptionkWh.toFixed(2).replace(".00", "") || ""}</td>
+        <td>${year.sold.toFixed(2).replace(".00", "") || ""}</td>
+        <td>${year.RUP_consumed.toFixed(2).replace(".00", "") || ""}</td>
         <td></td>
         <td></td>
-        <td>${
-          year.GomelConsumptionGkal.toFixed(2).replace(".00", "") || ""
-        }</td>
+        <td>${year.gkal.toFixed(2).replace(".00", "") || ""}</td>
       </tr>`);
     });
   } catch (err) {
@@ -498,78 +372,48 @@ export const generateMonthHTML = async (offsetMonth) => {
   try {
     await sql.connect(strConnectionToSQL);
 
-    const monthData =
-      await sql.query`select top(3) * from ProductionConsumptionsMonths ORDER BY Year DESC, MonthId DESC`.then(
-        (data) => {
-          const month = data.recordset[offsetMonth];
-          lines.push(`
-                <tr class="table-primary">
-                    <td>${monthNames[month.MonthId - 1]} ${month.Year}</td>
-                    <td>${
-                      month.ProductionPulp.toFixed(2).replace(".00", "") || ""
-                    }</td>
-                    <td>${
-                      month.TotalConsumption.toFixed(2).replace(".00", "") || ""
-                    }</td>
-                    <td>${
-                      month.BPPConsumption.toFixed(2).replace(".00", "") || ""
-                    }</td>
-                    <td>${
-                      month.ProductionElectricity.toFixed(2).replace(
-                        ".00",
-                        ""
-                      ) || ""
-                    }</td>
-                    <td>${
-                      month.Procentage.toFixed(2).replace(".00", "") || ""
-                    }</td>
-                    <td>${month.Sales.toFixed(2).replace(".00", "") || ""}</td>
-                    <td>${
-                      month.GomelConsumptionkWh.toFixed(2).replace(".00", "") ||
-                      ""
-                    }</td>
-                    <td>${
-                      month.GomelConsumptionMW.toFixed(2).replace(".00", "") ||
-                      ""
-                    }</td>
-                    <td>${month.MWstatus || ""}</td>
-                    <td>${
-                      month.GomelConsumptionGkal.toFixed(2).replace(
-                        ".00",
-                        ""
-                      ) || ""
-                    }</td>
-                </tr>`);
+    const resultDays = await sql.query(
+      QUERIES.getDaysByMonthOffset(offsetMonth)
+    );
 
-          return month;
-        }
-      );
+    const lastDay = resultDays.recordset[resultDays.recordset.length - 1];
 
-    const resultDays =
-      await sql.query`select * from ProductionConsumptions where DATEPART(YEAR, [Date]) = ${monthData.Year} AND DATEPART(MONTH, [Date]) = ${monthData.MonthId}`;
+    lines.push(`
+        <tr class="table-secondary">
+          <td>${
+            monthNames[lastDay.month_id - 1]
+          } ${lastDay.date.getFullYear()}</td>
+          <td>${lastDay.production.toFixed(2).replace(".00", "") || ""}</td>
+          <td>${lastDay.total_consumed.toFixed(2).replace(".00", "") || ""}</td>
+          <td>${lastDay.ZBC_consumed.toFixed(2).replace(".00", "") || ""}</td>
+          <td>${lastDay.generation.toFixed(2).replace(".00", "") || ""}</td>
+          <td>${lastDay.procentage.toFixed(2).replace(".00", "") || ""}</td>
+          <td>${lastDay.sold.toFixed(2).replace(".00", "") || ""}</td>
+          <td>${lastDay.RUP_consumed.toFixed(2).replace(".00", "") || ""}</td>
+          <td>${lastDay.power.toFixed(1).replace(".0", "") || ""}</td>
+          <td>${
+            resultDays.recordset.reduce((a, b) => a + +b.plus, 0) >=
+            resultDays.recordset.length / 2
+              ? "+"
+              : ""
+          }</td>
+          <td>${lastDay.gkal.toFixed(2).replace(".00", "") || ""}</td>
+        </tr>`);
 
     resultDays.recordset.map((day, index) => {
       lines.push(`
-        <tr class="table-secondary">
-            <td>с 1 по ${day.Date.getDate()}</td>
-            <td>${day.ProductionPulp.toFixed(2).replace(".00", "") || ""}</td>
-            <td>${day.TotalConsumption.toFixed(2).replace(".00", "") || ""}</td>
-            <td>${day.BPPConsumption.toFixed(2).replace(".00", "") || ""}</td>
-            <td>${
-              day.ProductionElectricity.toFixed(2).replace(".00", "") || ""
-            }</td>
-            <td>${day.Procentage.toFixed(2).replace(".00", "") || ""}</td>
-            <td>${day.Sales.toFixed(2).replace(".00", "") || ""}</td>
-            <td>${
-              day.GomelConsumptionkWh.toFixed(2).replace(".00", "") || ""
-            }</td>
-            <td>${
-              day.GomelConsumptionMW.toFixed(2).replace(".00", "") || ""
-            }</td>
-            <td>${day.MWstatus || ""}</td>
-            <td>${
-              day.GomelConsumptionGkal.toFixed(2).replace(".00", "") || ""
-            }</td>
+        <tr class="table-day">
+            <td>с 1 по ${day.date.getDate()}</td>
+            <td>${day.production.toFixed(2).replace(".00", "") || ""}</td>
+            <td>${day.total_consumed.toFixed(2).replace(".00", "") || ""}</td>
+            <td>${day.ZBC_consumed.toFixed(2).replace(".00", "") || ""}</td>
+            <td>${day.generation.toFixed(2).replace(".00", "") || ""}</td>
+            <td>${day.procentage.toFixed(2).replace(".00", "") || ""}</td>
+            <td>${day.sold.toFixed(2).replace(".00", "") || ""}</td>
+            <td>${day.RUP_consumed.toFixed(2).replace(".00", "") || ""}</td>
+            <td>${day.power.toFixed(1).replace(".0", "") || ""}</td>
+            <td>${day.plus ? "+" : ""}</td>
+            <td>${day.gkal.toFixed(2).replace(".00", "") || ""}</td>
         </tr>`);
     });
   } catch (err) {

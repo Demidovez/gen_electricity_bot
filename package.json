@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "start": "npx nodemon -x \"node index.js || (sleep 5; touch index.js)\"",
+    "dev": "npx nodemon",
     "go": "node index.js"
   },
   "dependencies": {

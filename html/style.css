@@ -92,3 +92,7 @@ table {
 .table-info > td {
   background-color: #bee5eb;
 }
+
+.table-day > td {
+  border-color: #d6d9db;
+}
