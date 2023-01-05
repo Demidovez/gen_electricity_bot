@@ -3,8 +3,6 @@ import fs from "fs";
 import QUERIES from "./queries.js";
 import sql from "mssql";
 
-const strConnectionToSQL = process.env.SQL_STRING;
-
 const monthNames = [
   "Январь",
   "Февраль",
@@ -370,7 +368,7 @@ export const generateMonthHTML = async (offsetMonth) => {
   const lines = [];
 
   try {
-    await sql.connect(strConnectionToSQL);
+    await sql.connect(process.env.SQL_STRING);
 
     const resultDays = await sql.query(
       QUERIES.getDaysByMonthOffset(offsetMonth)
