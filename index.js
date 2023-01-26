@@ -8,7 +8,7 @@ import {
   sendDataAllYearsNotify,
   sendDataMonthNotify,
 } from "./utils/notify.js";
-import { getUsersIds } from "./utils/utils.js";
+import { getUsersIds, reloadBot } from "./utils/utils.js";
 import fs from "fs";
 
 dotenv.config();
@@ -33,6 +33,10 @@ bot.use(async (ctx, next) => {
   } else {
     sendRequestUser(bot, ctx.from);
   }
+});
+
+bot.hears("Перезапуск", () => {
+  reloadBot();
 });
 
 bot.action(/addUser \|(.+)\| \|(.+)\| \|(.+)\|/, (ctx) => {

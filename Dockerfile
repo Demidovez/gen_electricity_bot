@@ -1,4 +1,4 @@
-FROM alpine
+FROM node:17.5.0-alpine
 WORKDIR /usr/app
 
 # Installs latest Chromium (92) package.
@@ -9,8 +9,7 @@ RUN apk add --no-cache \
       harfbuzz \
       ca-certificates \
       ttf-freefont \
-      nodejs \
-      yarn
+      nodejs
 
 # Tell Puppeteer to skip installing Chrome. We'll be using the installed package.
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
@@ -26,11 +25,7 @@ RUN addgroup -S pptruser && adduser -S -g pptruser pptruser \
     && chown -R pptruser:pptruser /app
 
 COPY package*.json ./
-RUN yarn install
+RUN npm install
 COPY . .
 
-# Run everything after as non-privileged user.
-# USER pptruser
-
-
-# ENTRYPOINT [ "npm", "run go" ]
+ENTRYPOINT [ "npm", "run", "go" ]

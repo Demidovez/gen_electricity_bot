@@ -27,6 +27,7 @@ export const generateYearImage = async () => {
 
   await page.screenshot({ path: "year.png" });
 
+  await page.close();
   await browser.close();
 };
 
@@ -52,6 +53,7 @@ export const generateYearsImage = async () => {
 
   await page.screenshot({ path: "years.png" });
 
+  await page.close();
   await browser.close();
 };
 
@@ -77,5 +79,6 @@ export const generateMonthImage = async (offsetMonth) => {
 
   await page.screenshot({ path: "month.png" });
 
+  await page.close();
   await browser.close();
 };

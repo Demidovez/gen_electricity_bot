@@ -4,9 +4,8 @@ services:
     build: .
     restart: unless-stopped
     image: gen_electricity_bot
-    container_name: gen_electricity_bot_co
-    command: yarn run go
+    container_name: GenElectricityBot
+    env_file: ./.env
     volumes:
-      - ./users.txt:/usr/app/users.txt
-      - ./html:/usr/app/html
-      - ./.env:/usr/app/.env
+      - /etc/timezone:/etc/timezone
+      - /etc/localtime:/etc/localtime

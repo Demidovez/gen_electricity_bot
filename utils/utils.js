@@ -11,3 +11,10 @@ export const getUsersIds = () => {
     .filter((line) => line != "")
     .map((line) => line.split("|")[0]);
 };
+
+export const reloadBot = () => {
+  console.log("Перезапуск бота");
+  setTimeout(() => {
+    process.exit(1);
+  }, 5000);
+};
